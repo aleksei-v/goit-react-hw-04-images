@@ -1,5 +1,5 @@
 
-import React, { Component } from "react";
+import { useState, useEffect } from "react";
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 import fetchImages from "services/FetchImages";
@@ -10,84 +10,65 @@ import ImageGalary from "../ImageGallery";
 import Button from '../Button';
 import Loader from '../Loader';
 
-class App extends Component {
+function App () {
 
-  state = {
-    imageName: '',
-    images: [],
-    step: 1,
-    isLoading: false,
-  }
+  const [imageName, setImageName] = useState('');
+  const [images, setImages] = useState([]);
+  const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
 
-  onSubmit = imageName => {
-    if (imageName !== this.state.imageName) {
-      this.setState({
-        imageName,
-        images: [],
-        step: 1,
-      })
+  const onSubmit = NewImage => {
+    if (NewImage !== imageName) {
+      setImageName(NewImage);
+      setImages([])
+      setStep(1)
     } else {
-       this.setState({
-        imageName,
-      })
-    }
-    
-  }
-  componentDidUpdate(_, prevState) {
-      const prevName = prevState.imageName;
-      const nextName = this.state.imageName;
-
-    if (prevName !== nextName || prevState.step !== this.state.step) {
-      this.findPictures();
+      setImageName(NewImage);
     }
   };
 
-  loadMoreImages = () => {
-    this.setState(prevState => ({
-      step: prevState.step + 1,
-      isLoading: true,
-    }))
+  const loadMoreImages = () => {
+    setStep(step + 1);
+    setIsLoading(true);
   };
-
-
-  findPictures = async () => {
-
-    try {
-      this.setState ({isLoading: true})
-      const fetchedImages = await fetchImages(this.state.imageName, this.state.step);
-      
-
-      fetchedImages.hits.length === 0
-        ? Notify.failure("Unfortunately, there are no results for you")
-        : this.setState(prevState => ({
-          images: [...prevState.images, ...fetchedImages.hits],
-        }),
-          
-        );
+ 
+  useEffect(() => {
        
-    } catch (error) {
-      console.log(error);
-    }
-    finally {
-      this.setState({ isLoading: false });
-    }
-  }
-  render() {
-    const { images, isLoading } = this.state;
-   
+    if ( !imageName) {
+      return;
+    };
+    
+    const findPictures = async () => {
+
+      try {
+        setIsLoading(true)
+        const fetchedImages = await fetchImages(imageName, step);
+
+        fetchedImages.hits.length === 0
+          ? Notify.failure("Unfortunately, there are no results for you")
+          : setImages(images => [...images, ...fetchedImages.hits]);
+
+      } catch (error) {
+        console.log(error);
+      }
+      finally {
+        setIsLoading(false);
+      }
+    };
+    findPictures();
+  }, [imageName, step])
     return (
       
       <AppStyled>
-        <SearchBar onSubmit={this.onSubmit} />
+        <SearchBar onSubmit={onSubmit} />
         {isLoading && images.length === 0
           ? <Loader/>
         : <ImageGalary images={images} />}
 
-        {images.length !== 0 && <Button onHadleClickMore={this.loadMoreImages}
+        {images.length !== 0 && <Button onHadleClickMore={loadMoreImages}
         />}
       </AppStyled>
     );
-  }
 };
 
 export default App;

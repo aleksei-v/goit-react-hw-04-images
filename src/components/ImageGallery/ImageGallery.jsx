@@ -15,9 +15,8 @@ function ImageGalary({ images }) {
                 </StyledImageGalleryItem>
             ))}
             </StyledImageGallery>
-
     )
-}
+};
 
 
 ImageGalary.propTypes = {
